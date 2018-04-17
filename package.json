@@ -1,0 +1,46 @@
+{
+    "name": "@gojob/ts-elasticsearch",
+    "version": "1.0.0",
+    "license": "MIT",
+    "description": "Elasticsearch decorated by TypeScript",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/gojob-1337/node-ts-elasticsearch"
+    },
+    "keywords": [
+        "elasticsearch",
+        "typescript",
+        "decorator"
+    ],
+    "pre-commit": [
+        "lint"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "lint": "tslint -c ./tslint.json -p ./tsconfig.json -t verbose",
+        "start": "echo 'Not runable' && exit 1",
+        "test": "jest --silent=false --config=jest.json",
+        "coverage": "yarn test --coverage"
+    },
+    "devDependencies": {
+        "@gojob/tslint-config": "^0.0.3",
+        "@types/elasticsearch": "^5.0.22",
+        "@types/jest": "^22.2.2",
+        "@types/node": "^7.0.60",
+        "coveralls": "^3.0.0",
+        "jest": "^22.4.3",
+        "prettier": "^1.11.1",
+        "ts-jest": "^22.4.2",
+        "ts-node": "^5.0.1",
+        "tslint": "^5.9.1",
+        "tslint-config-prettier": "^1.10.0",
+        "tslint-plugin-prettier": "^1.3.0",
+        "typescript": "^2.8.1"
+    },
+    "dependencies": {
+        "elasticsearch": "^14.2.2",
+        "reflect-metadata": "^0.1.12"
+    }
+}

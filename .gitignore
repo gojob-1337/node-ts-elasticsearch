@@ -1,0 +1,33 @@
+# Output directory
+dist
+
+# Coverage directory
+coverage
+
+# Dependency directories
+node_modules
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# System
+.DS_Store
+
+# IDE Files
+.idea
+.vscode
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env

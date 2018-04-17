@@ -1,0 +1,22 @@
+version: "3.2"
+services:
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.2.3
+    environment:
+      - LOGGING_QUIET=true
+      - ELASTICSEARCH_URL=http://${ELASTICSEARCH_HOST}:${ELASTICSEARCH_PORT}
+    ports:
+      - 5601:5601
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.2.3
+    environment:
+      - discovery.type=single-node
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - ${ELASTICSEARCH_PORT}:9200
+
+volumes:
+  esdata:
