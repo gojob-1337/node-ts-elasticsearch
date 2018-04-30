@@ -132,7 +132,7 @@ export const Field = (
       options = { ...typeOrOptions } as IFieldStructure;
     }
     if (options._cls) {
-      options.properties = Reflect.getMetadata(DECORATORS.PROPERTIES, options._cls.prototype);
+      options.properties = Reflect.getMetadata(DECORATORS.PROPERTIES, options._cls);
     }
   }
 
@@ -141,11 +141,11 @@ export const Field = (
    * Store field description into class metadata using DECORATORS.FIELDS key
    */
   return (target: any, key: string) => {
-    const properties: IPropertiesMetadata = Reflect.getMetadata(DECORATORS.PROPERTIES, target) || {};
+    const properties: IPropertiesMetadata = Reflect.getMetadata(DECORATORS.PROPERTIES, target.constructor) || {};
     if (properties[key]) {
       throw new Error(`Multiple usage of @Field() on ${target.constructor.name}.${key}`);
     }
     properties[key] = options;
-    Reflect.defineMetadata(DECORATORS.PROPERTIES, properties, target);
+    Reflect.defineMetadata(DECORATORS.PROPERTIES, properties, target.constructor);
   };
 };

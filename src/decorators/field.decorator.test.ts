@@ -1,12 +1,13 @@
 import { DECORATORS } from '../constants';
 import { Field } from './field.decorator';
+import { Index } from './index.decorator';
 
 it('handles simple type', () => {
   class User {
     @Field('text') name: string;
     @Field('double') age: number;
   }
-  const properties = Reflect.getMetadata(DECORATORS.PROPERTIES, User.prototype);
+  const properties = Reflect.getMetadata(DECORATORS.PROPERTIES, User);
 
   expect(properties).toEqual({
     name: { type: 'text' },
@@ -19,7 +20,7 @@ it('handles complexe type definition', () => {
     name: string;
     @Field('double') age: number;
   }
-  const properties = Reflect.getMetadata(DECORATORS.PROPERTIES, User.prototype);
+  const properties = Reflect.getMetadata(DECORATORS.PROPERTIES, User);
 
   expect(properties).toEqual({
     name: { type: 'text', copy_to: 'xyz', boost: 2 },
@@ -37,7 +38,7 @@ it('handles object type', () => {
     city: City;
   }
 
-  const properties = Reflect.getMetadata(DECORATORS.PROPERTIES, User.prototype);
+  const properties = Reflect.getMetadata(DECORATORS.PROPERTIES, User);
 
   expect(properties).toEqual({
     city: { type: 'object', _cls: City, properties: { name: { type: 'text' } } },
@@ -54,7 +55,7 @@ it('handles nested type', () => {
     cities: City[];
   }
 
-  const properties = Reflect.getMetadata(DECORATORS.PROPERTIES, User.prototype);
+  const properties = Reflect.getMetadata(DECORATORS.PROPERTIES, User);
 
   expect(properties).toEqual({
     cities: { type: 'nested', _cls: City, properties: { name: { type: 'text' } } },
@@ -67,7 +68,7 @@ it('handles multiple fields', () => {
     description: string;
   }
 
-  const properties = Reflect.getMetadata(DECORATORS.PROPERTIES, Article.prototype);
+  const properties = Reflect.getMetadata(DECORATORS.PROPERTIES, Article);
 
   expect(properties).toEqual({
     description: {
