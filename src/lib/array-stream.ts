@@ -1,7 +1,7 @@
 import { Readable } from 'stream';
 
 export class ArrayStream extends Readable {
-  private source: any[];
+  private source: any[] | null;
 
   constructor(source: any[]) {
     super({ objectMode: true });
@@ -9,10 +9,12 @@ export class ArrayStream extends Readable {
   }
 
   _read(size: number): void {
-    for (const source of this.source) {
-      this.push(source);
+    if (this.source) {
+      for (const source of this.source) {
+        this.push(source);
+      }
+      this.push(null);
+      this.source = null;
     }
-    this.push(null);
-    this.source = [];
   }
 }
