@@ -35,3 +35,18 @@ it('stream data', () => {
   entry = stream.read();
   expect(entry).toBe(null);
 });
+
+it('does not push null more than once', () => {
+  const source = [{ a: 1 }, { a: 2 }];
+  const stream = new ArrayStream(source);
+
+  stream.push = jest.fn();
+
+  stream._read(1);
+  stream._read(1);
+
+  expect(stream.push).toHaveBeenCalledTimes(3);
+  expect(stream.push).toHaveBeenCalledWith({ a: 1 });
+  expect(stream.push).toHaveBeenCalledWith({ a: 2 });
+  expect(stream.push).toHaveBeenCalledWith(null);
+});
