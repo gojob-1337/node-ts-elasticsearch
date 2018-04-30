@@ -1,5 +1,6 @@
 import { IFieldStructure, IPropertiesMetadata } from '../decorators/field.decorator';
 import { IndexedClass } from '../types';
+import { ICoreOptions } from './core';
 import { getId, getIndexMetadata, getPropertiesMetadata } from './metadata-handler';
 
 /**
@@ -65,8 +66,17 @@ export interface IQueryStructure<T> {
 
 /**
  * Returned structured parameters for ES query from various types
+ * @param coreOptions Core options
+ * @param docOrClass
+ * @param docOrId
+ * @param doc
  */
-export function getQueryStructure<T>(docOrClass: T | IndexedClass<T>, docOrId?: Partial<T> | string, doc?: Partial<T>): IQueryStructure<T> {
+export function getQueryStructure<T>(
+  coreOptions: ICoreOptions,
+  docOrClass: T | IndexedClass<T>,
+  docOrId?: Partial<T> | string,
+  doc?: Partial<T>,
+): IQueryStructure<T> {
   let document: Partial<T> | undefined = doc;
   let cls: IndexedClass<T>;
   let id: string | undefined;
@@ -86,10 +96,10 @@ export function getQueryStructure<T>(docOrClass: T | IndexedClass<T>, docOrId?: 
     cls = document.constructor as IndexedClass<T>;
   }
 
-  const metadata = getIndexMetadata(cls);
+  const metadata = getIndexMetadata(coreOptions, cls);
 
   if (!id && document && metadata.primary) {
-    id = getId(cls, document);
+    id = getId(coreOptions, cls, document);
   }
 
   return { cls, document, id: id || '', index: metadata.index, type: metadata.type };
@@ -97,12 +107,13 @@ export function getQueryStructure<T>(docOrClass: T | IndexedClass<T>, docOrId?: 
 
 /**
  * Returns the content to send to a bulk query
+ * @param coreOptions Core options
  * @param action Bulk action type
  * @param cls Indexed class the documents belong to
  * @param documents Array of document to send
  */
-export function buildBulkQuery<T>(action: 'index', cls: IndexedClass<T>, documents: Array<Partial<T>>): any {
-  const metadata = getIndexMetadata(cls);
+export function buildBulkQuery<T>(coreOptions: ICoreOptions, action: 'index', cls: IndexedClass<T>, documents: Array<Partial<T>>): any {
+  const metadata = getIndexMetadata(coreOptions, cls);
   const body: any[] = [];
 
   documents.forEach((document: Partial<T>) => {

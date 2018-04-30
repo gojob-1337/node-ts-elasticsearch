@@ -171,7 +171,20 @@ class User {
 
 #### Elasticsearch core
 
-Instanciate this class with the [client configuration option](https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/configuration.html).
+Instanciate this class with an [IConfigOptions](#iconfigoptions) or an [official elasticsearch.Client](https://github.com/elastic/elasticsearch-js/blob/14.x/docs/configuration.asciidoc) instance.
+
+#### IConfigOptions
+
+IConfigOptions extends the official [client configuration option](https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/configuration.html).
+
+Extended options provided by IConfigOptions:
+
+|     Name    |                                                    Type                                                   | Optional | Description                     |
+|:-----------:|:---------------------------------------------------------------------------------------------------------:|:--------:|---------------------------------|
+| client      | [elasticsearch.Client](https://github.com/elastic/elasticsearch-js/blob/14.x/docs/configuration.asciidoc) |     X    | Official client instance to use |
+| indexPrefix |                                                   string                                                  |     X    | Prefix to set to all indexes    |
+
+#### Core functions
 
 The main class provides the main part of the [document API](https://www.elastic.co/guide/en/elasticsearch/reference/6.2/docs.html) functions.
 

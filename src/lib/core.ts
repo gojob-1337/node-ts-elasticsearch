@@ -11,8 +11,12 @@ export type IndexedCountParams = Indexed<CountParams>;
 
 export const BULK_ITEMS_COUNT_MAX = 1000;
 
+export interface ICoreOptions {
+  indexPrefix?: string;
+}
+
 export class Core {
-  constructor(private readonly client: Client) {}
+  constructor(private readonly client: Client, private readonly options: ICoreOptions) {}
 
   /**
    * Close the connection
@@ -34,7 +38,7 @@ export class Core {
       const send = async (): Promise<void> => {
         try {
           if (items.length) {
-            const query = buildBulkQuery<T>('index', cls, items.splice(0, items.length));
+            const query = buildBulkQuery<T>(this.options, 'index', cls, items.splice(0, items.length));
             await this.client.bulk(query);
           }
         } catch (err) {
@@ -83,7 +87,7 @@ export class Core {
   count<T>(clsOrParams: IndexedClass<T> | CountParams, countParams?: IndexedCountParams): Promise<CountResponse> {
     let params: CountParams;
     if (typeof clsOrParams === 'function') {
-      const metadata = getIndexMetadata(clsOrParams);
+      const metadata = getIndexMetadata(this.options, clsOrParams);
       params = { index: metadata.index, type: metadata.type, ...countParams };
     } else {
       params = { ...clsOrParams };
@@ -106,7 +110,7 @@ export class Core {
    * @param doc
    */
   create<T>(docOrClass: T | IndexedClass<T>, docOrId?: Partial<T> | string, doc?: Partial<T>): Promise<any> {
-    const params = getQueryStructure<T>(docOrClass, docOrId, doc);
+    const params = getQueryStructure<T>(this.options, docOrClass, docOrId, doc);
 
     if (!params.document) {
       throw new Error('Document is missing');
@@ -126,7 +130,7 @@ export class Core {
    * @param docId
    */
   delete<T>(docOrClass: T | IndexedClass<T>, docId?: string): Promise<any> {
-    const params = getQueryStructure<T>(docOrClass, docId);
+    const params = getQueryStructure<T>(this.options, docOrClass, docId);
 
     if (!params.id) {
       throw new Error(`ID is missing when deleting a ${params.cls.name}`);
@@ -145,7 +149,7 @@ export class Core {
    * @param idOrParams
    */
   async get<T>(cls: IndexedClass<T>, idOrParams: string | IndexedGetParams): Promise<{ response: GetResponse<T>; document: T }> {
-    const metadata = getIndexMetadata(cls);
+    const metadata = getIndexMetadata(this.options, cls);
     const params: GetParams = { index: metadata.index, type: metadata.type, ...(typeof idOrParams === 'string' ? { id: idOrParams } : idOrParams) };
     const response = await this.client.get<T>(params);
     const document = instantiateResult(cls, response._source);
@@ -167,7 +171,7 @@ export class Core {
    * @param doc
    */
   index<T>(docOrClass: T | IndexedClass<T>, docOrId?: Partial<T> | string, doc?: Partial<T>): Promise<any> {
-    const params = getQueryStructure<T>(docOrClass, docOrId, doc);
+    const params = getQueryStructure<T>(this.options, docOrClass, docOrId, doc);
 
     if (!params.document) {
       throw new Error('Document is missing');
@@ -200,7 +204,7 @@ export class Core {
    * @param params
    */
   async search<T>(cls: IndexedClass<T>, params: IndexedSearchParams): Promise<{ response: SearchResponse<T>; documents: T[] }> {
-    const metadata = getIndexMetadata(cls);
+    const metadata = getIndexMetadata(this.options, cls);
     const response = await this.client.search<T>({ index: metadata.index, type: metadata.type, ...params });
     const documents = response.hits.hits.map(hit => instantiateResult(cls, hit._source));
     return { response, documents };
@@ -221,7 +225,7 @@ export class Core {
    * @param doc
    */
   update<T>(docOrClass: T | IndexedClass<T>, docOrId?: Partial<T> | string, doc?: Partial<T>): Promise<any> {
-    const params = getQueryStructure<T>(docOrClass, docOrId, doc);
+    const params = getQueryStructure<T>(this.options, docOrClass, docOrId, doc);
 
     if (!params.document) {
       throw new Error('Document is missing');

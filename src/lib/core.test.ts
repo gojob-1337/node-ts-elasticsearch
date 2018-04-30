@@ -1,10 +1,9 @@
-import { throws } from 'assert';
 import * as es from 'elasticsearch';
 import { Readable } from 'stream';
 import Mock = jest.Mock;
 
 import { Field, Index, Primary } from '../';
-import { BULK_ITEMS_COUNT_MAX, Core } from './core';
+import { BULK_ITEMS_COUNT_MAX, Core, ICoreOptions } from './core';
 import { deepFreeze } from './testing-tools.test';
 
 import * as tools from './tools';
@@ -14,6 +13,7 @@ beforeEach(() => jest.clearAllMocks());
 
 let client: es.Client;
 let core: Core;
+let coreOptions: ICoreOptions;
 
 @Index()
 class User {
@@ -31,8 +31,9 @@ class Lambda {
 }
 
 beforeEach(() => {
+  coreOptions = { indexPrefix: 'es1_' };
   client = {} as es.Client;
-  core = new Core(client);
+  core = new Core(client, coreOptions);
 });
 
 describe('bulkIndex', () => {
@@ -46,7 +47,7 @@ describe('bulkIndex', () => {
     expect(client.bulk).toHaveBeenCalledWith(query);
 
     expect(tools.buildBulkQuery).toHaveBeenCalledTimes(1);
-    expect(tools.buildBulkQuery).toHaveBeenCalledWith('index', User, [
+    expect(tools.buildBulkQuery).toHaveBeenCalledWith(coreOptions, 'index', User, [
       { user_id: '123', name: 'Bob', age: 13 },
       { user_id: '124', name: 'Tom', age: 14 },
     ]);
@@ -65,7 +66,7 @@ describe('bulkIndex', () => {
     await core.bulkIndex(User, stream);
 
     expect(tools.buildBulkQuery).toHaveBeenCalledTimes(1);
-    expect(tools.buildBulkQuery).toHaveBeenCalledWith('index', User, [
+    expect(tools.buildBulkQuery).toHaveBeenCalledWith(coreOptions, 'index', User, [
       { user_id: '123', name: 'Bob', age: 13 },
       { user_id: '124', name: 'Tom', age: 14 },
     ]);
@@ -87,9 +88,14 @@ describe('bulkIndex', () => {
     await core.bulkIndex(User, source);
 
     expect(tools.buildBulkQuery).toHaveBeenCalledTimes(3);
-    expect(tools.buildBulkQuery).toHaveBeenCalledWith('index', User, source.slice(0, BULK_ITEMS_COUNT_MAX));
-    expect(tools.buildBulkQuery).toHaveBeenCalledWith('index', User, source.slice(BULK_ITEMS_COUNT_MAX, 2 * BULK_ITEMS_COUNT_MAX));
-    expect(tools.buildBulkQuery).toHaveBeenCalledWith('index', User, source.slice(2 * BULK_ITEMS_COUNT_MAX, 2 * BULK_ITEMS_COUNT_MAX + 1));
+    expect(tools.buildBulkQuery).toHaveBeenCalledWith(coreOptions, 'index', User, source.slice(0, BULK_ITEMS_COUNT_MAX));
+    expect(tools.buildBulkQuery).toHaveBeenCalledWith(coreOptions, 'index', User, source.slice(BULK_ITEMS_COUNT_MAX, 2 * BULK_ITEMS_COUNT_MAX));
+    expect(tools.buildBulkQuery).toHaveBeenCalledWith(
+      coreOptions,
+      'index',
+      User,
+      source.slice(2 * BULK_ITEMS_COUNT_MAX, 2 * BULK_ITEMS_COUNT_MAX + 1),
+    );
 
     expect(client.bulk).toHaveBeenCalledTimes(3);
     expect(client.bulk).toHaveBeenCalledWith(query);
@@ -108,7 +114,7 @@ describe('bulkIndex', () => {
     await core.bulkIndex(User, source);
 
     expect(tools.buildBulkQuery).toHaveBeenCalledTimes(1);
-    expect(tools.buildBulkQuery).toHaveBeenCalledWith('index', User, source);
+    expect(tools.buildBulkQuery).toHaveBeenCalledWith(coreOptions, 'index', User, source);
 
     expect(client.bulk).toHaveBeenCalledTimes(1);
     expect(client.bulk).toHaveBeenCalledWith(query);
@@ -182,13 +188,13 @@ describe('count', () => {
   it('calls client.count', async () => {
     await core.count(User);
     expect(client.count).toHaveBeenCalledTimes(1);
-    expect(client.count).toHaveBeenCalledWith({ index: 'user', type: 'user' });
+    expect(client.count).toHaveBeenCalledWith({ index: 'es1_user', type: 'user' });
   });
 
   it('mixes class and query', async () => {
     await core.count(User, { body: { query: { match_all: {} } } });
     expect(client.count).toHaveBeenCalledTimes(1);
-    expect(client.count).toHaveBeenCalledWith({ index: 'user', type: 'user', body: { query: { match_all: {} } } });
+    expect(client.count).toHaveBeenCalledWith({ index: 'es1_user', type: 'user', body: { query: { match_all: {} } } });
   });
 
   it('handle original query', async () => {
@@ -213,7 +219,7 @@ describe('create', () => {
     (tools.getQueryStructure as Mock).mockReturnValue({ index: 'idx', type: 'tp', id: '123', cls: User, document: { name: 'Bob' } });
     await core.create(User, 'xyz', user);
     expect(tools.getQueryStructure).toHaveBeenCalledTimes(1);
-    expect(tools.getQueryStructure).toHaveBeenCalledWith(User, 'xyz', user);
+    expect(tools.getQueryStructure).toHaveBeenCalledWith(coreOptions, User, 'xyz', user);
     expect(client.create).toHaveBeenCalledTimes(1);
     expect(client.create).toHaveBeenCalledWith({ index: 'idx', type: 'tp', id: '123', body: { name: 'Bob' } });
   });
@@ -236,7 +242,7 @@ describe('delete', () => {
     (tools.getQueryStructure as Mock).mockReturnValue({ index: 'idx', type: 'tp', id: '123', cls: User });
     await core.delete(User, 'xyz');
     expect(tools.getQueryStructure).toHaveBeenCalledTimes(1);
-    expect(tools.getQueryStructure).toHaveBeenCalledWith(User, 'xyz');
+    expect(tools.getQueryStructure).toHaveBeenCalledWith(coreOptions, User, 'xyz');
     expect(client.delete).toHaveBeenCalledTimes(1);
     expect(client.delete).toHaveBeenCalledWith({ index: 'idx', type: 'tp', id: '123' });
   });
@@ -274,7 +280,7 @@ describe('get', () => {
     expect(result.document).toBe(user);
 
     expect(client.get).toHaveBeenCalledTimes(1);
-    expect(client.get).toHaveBeenCalledWith({ index: 'user', type: 'user', id: '1234' });
+    expect(client.get).toHaveBeenCalledWith({ index: 'es1_user', type: 'user', id: '1234' });
     expect(tools.instantiateResult).toHaveBeenCalledTimes(1);
     expect(tools.instantiateResult).toHaveBeenCalledWith(User, response._source);
   });
@@ -290,7 +296,7 @@ describe('get', () => {
   it('handle complex query', async () => {
     await core.get(User, { id: '456', ignore: 404 });
     expect(client.get).toHaveBeenCalledTimes(1);
-    expect(client.get).toHaveBeenCalledWith({ index: 'user', type: 'user', id: '456', ignore: 404 });
+    expect(client.get).toHaveBeenCalledWith({ index: 'es1_user', type: 'user', id: '456', ignore: 404 });
   });
 });
 
@@ -302,7 +308,7 @@ describe('index', () => {
     (tools.getQueryStructure as Mock).mockReturnValue({ index: 'idx', type: 'tp', id: '123', cls: User, document: { name: 'Bob' } });
     await core.index(User, 'xyz', user);
     expect(tools.getQueryStructure).toHaveBeenCalledTimes(1);
-    expect(tools.getQueryStructure).toHaveBeenCalledWith(User, 'xyz', user);
+    expect(tools.getQueryStructure).toHaveBeenCalledWith(coreOptions, User, 'xyz', user);
     expect(client.index).toHaveBeenCalledTimes(1);
     expect(client.index).toHaveBeenCalledWith({ index: 'idx', type: 'tp', id: '123', body: { name: 'Bob' } });
   });
@@ -386,7 +392,7 @@ describe('search', () => {
     expect(result.documents[0]).toBeInstanceOf(User);
     expect(result.documents[1]).toBeInstanceOf(User);
     expect(client.search).toHaveBeenCalledTimes(1);
-    expect(client.search).toHaveBeenCalledWith({ index: 'user', type: 'user', ...query });
+    expect(client.search).toHaveBeenCalledWith({ index: 'es1_user', type: 'user', ...query });
     expect(tools.instantiateResult).toHaveBeenCalledTimes(2);
     expect(tools.instantiateResult).toHaveBeenCalledWith(User, { user_id: '123', name: 'Bob', age: 13 });
     expect(tools.instantiateResult).toHaveBeenCalledWith(User, { user_id: '456', name: 'Tom', age: 14 });
@@ -406,7 +412,7 @@ describe('update', () => {
     (tools.getQueryStructure as Mock).mockReturnValue({ index: 'idx', type: 'tp', id: '123', cls: User, document: { name: 'Bob' } });
     await core.update(User, 'xyz', user);
     expect(tools.getQueryStructure).toHaveBeenCalledTimes(1);
-    expect(tools.getQueryStructure).toHaveBeenCalledWith(User, 'xyz', user);
+    expect(tools.getQueryStructure).toHaveBeenCalledWith(coreOptions, User, 'xyz', user);
     expect(client.update).toHaveBeenCalledTimes(1);
     expect(client.update).toHaveBeenCalledWith({ index: 'idx', type: 'tp', id: '123', body: { doc: { name: 'Bob' } } });
   });
