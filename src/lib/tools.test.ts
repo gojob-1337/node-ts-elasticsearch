@@ -1,7 +1,30 @@
-import { Index, IPropertiesMetadata, Primary } from '../';
-import { Field } from '../decorators/field.decorator';
+import { IPropertiesMetadata } from '../';
+import { ICoreOptions } from './core';
+import { getId, getIndexMetadata, getPropertiesMetadata } from './metadata-handler';
 import { deepFreeze } from './testing-tools.test';
 import { buildBulkQuery, getPureMapping, getQueryStructure, instantiateResult } from './tools';
+import Mock = jest.Mock;
+
+jest.mock('./metadata-handler');
+beforeEach(() => jest.clearAllMocks());
+
+let options: ICoreOptions;
+
+class User {
+  id?: string;
+  name?: string;
+  values?: number[];
+  city?: City;
+  cities?: City[];
+}
+class Country {
+  name: string;
+}
+
+class City {
+  name: string;
+  country: Country;
+}
 
 describe('getPureMapping', () => {
   it('remove class from mapping', () => {
@@ -53,26 +76,20 @@ describe('getPureMapping', () => {
 
 describe('instantiateResult', () => {
   it('returns undefined if source is undefined', () => {
-    @Index()
-    class User {
-      @Field('text') name: string;
-      @Field('integer') values: number[];
-    }
-
+    (getPropertiesMetadata as Mock).mockReturnValue({ any: 'metadata' });
     const result = instantiateResult(User, undefined as any);
     expect(result).toEqual(undefined);
   });
 
   it('instanciate an object', () => {
-    @Index()
-    class User {
-      @Field('text') name: string;
-      @Field('integer') values: number[];
-    }
-
     const json: User = deepFreeze({
       name: 'Bob',
       values: [1, 2, 3],
+    });
+
+    (getPropertiesMetadata as Mock).mockReturnValue({
+      name: { type: 'text' },
+      values: { type: 'integer' },
     });
 
     const result = instantiateResult(User, json);
@@ -81,14 +98,14 @@ describe('instantiateResult', () => {
   });
 
   it('instanciate a partial object', () => {
-    @Index()
-    class User {
-      @Field('text') name: string;
-      @Field('integer') age: number;
-    }
-
     const json: User = deepFreeze({
       name: 'Bob',
+    });
+
+    (getPropertiesMetadata as Mock).mockReturnValue({
+      id: { type: 'text' },
+      name: { type: 'text' },
+      values: { type: 'integer' },
     });
 
     const result = instantiateResult(User, json);
@@ -97,10 +114,9 @@ describe('instantiateResult', () => {
   });
 
   it('instanciate an array of object', () => {
-    @Index()
-    class User {
-      @Field('text') name: string;
-    }
+    (getPropertiesMetadata as Mock).mockReturnValue({
+      name: { type: 'text' },
+    });
 
     const json: User[] = deepFreeze([{ name: 'Bob' }, { name: 'Tom' }]);
 
@@ -112,25 +128,24 @@ describe('instantiateResult', () => {
   });
 
   it('instanciate single nested objects', () => {
-    class Country {
-      @Field('text') name: string;
-    }
-
-    class City {
-      @Field('text') name: string;
-      @Field({ object: Country })
-      country: Country;
-    }
-
-    @Index()
-    class User {
-      @Primary()
-      @Field('text')
-      id: string;
-      @Field('text') name: string;
-      @Field({ object: City })
-      city: City;
-    }
+    (getPropertiesMetadata as Mock).mockReturnValue({
+      id: { type: 'keyword' },
+      name: { type: 'text' },
+      city: {
+        type: 'object',
+        _cls: City,
+        properties: {
+          name: { type: 'text' },
+          country: {
+            type: 'object',
+            _cls: Country,
+            properties: {
+              name: { type: 'text' },
+            },
+          },
+        },
+      },
+    });
 
     const json: User = deepFreeze({
       id: '007',
@@ -148,30 +163,28 @@ describe('instantiateResult', () => {
     expect(result).toEqual(json);
     expect(result).toBeInstanceOf(User);
     expect(result.city).toBeInstanceOf(City);
-    expect(result.city.country).toBeInstanceOf(Country);
+    expect(result.city!.country).toBeInstanceOf(Country);
   });
 
   it('instanciate array of nested objects', () => {
-    class Country {
-      @Field('text') name: string;
-    }
-
-    class City {
-      @Field('text') name: string;
-      @Field({ object: Country })
-      country: Country;
-    }
-
-    @Index()
-    class User {
-      @Primary()
-      @Field('text')
-      id: string;
-      @Field('text') name: string;
-      @Field({ nested: City })
-      cities: City[];
-    }
-
+    (getPropertiesMetadata as Mock).mockReturnValue({
+      id: { type: 'keyword' },
+      name: { type: 'text' },
+      cities: {
+        type: 'nested',
+        _cls: City,
+        properties: {
+          name: { type: 'text' },
+          country: {
+            type: 'object',
+            _cls: Country,
+            properties: {
+              name: { type: 'text' },
+            },
+          },
+        },
+      },
+    });
     const json: User = deepFreeze({
       id: '007',
       name: 'Vincent',
@@ -196,122 +209,142 @@ describe('instantiateResult', () => {
     expect(result).toEqual(json);
     expect(result).toBeInstanceOf(User);
     expect(Array.isArray(result.cities)).toBe(true);
-    expect(result.cities[0]).toBeInstanceOf(City);
-    expect(result.cities[0].country).toBeInstanceOf(Country);
-    expect(result.cities[1]).toBeInstanceOf(City);
-    expect(result.cities[1].country).toBeInstanceOf(Country);
+    expect(result.cities![0]).toBeInstanceOf(City);
+    expect(result.cities![0].country).toBeInstanceOf(Country);
+    expect(result.cities![1]).toBeInstanceOf(City);
+    expect(result.cities![1].country).toBeInstanceOf(Country);
   });
 });
 
 describe('getQueryStructure', () => {
-  it('throw if class is missing', () => {
-    expect(() => getQueryStructure({ id: '123', name: 'Bob' })).toThrow('Index is missing');
-  });
-
   describe('Primary key based class', () => {
-    @Index()
-    class User {
-      @Primary()
-      @Field('text')
-      id: string;
-      @Field('text') name: string;
-    }
+    beforeEach(() => {
+      options = { indexPrefix: 'es1_' };
+      (getIndexMetadata as Mock).mockReturnValue({ index: 'a_index', type: 'a_type', primary: 'id' });
+      (getId as Mock).mockReturnValue('123');
+    });
 
     it('handles instance', () => {
       const user = new User();
-      user.id = '123';
-      const query = getQueryStructure(user);
-      expect(query).toEqual({ cls: User, document: user, id: '123', index: 'user', type: 'user' });
+      user.id = '1';
+      const query = getQueryStructure(options, user);
+      expect(query).toEqual({ cls: User, document: user, id: '123', index: 'a_index', type: 'a_type' });
+      expect(getIndexMetadata).toHaveBeenCalledWith(options, User);
+      expect(getId).toHaveBeenCalledWith(options, User, user);
     });
 
     it('handles literal', () => {
-      const user: User = { id: '123', name: 'Bob' };
-      const query = getQueryStructure(User, user);
-      expect(query).toEqual({ cls: User, document: user, id: '123', index: 'user', type: 'user' });
+      const user: User = { id: '1', name: 'Bob' };
+      const query = getQueryStructure(options, User, user);
+      expect(query).toEqual({ cls: User, document: user, id: '123', index: 'a_index', type: 'a_type' });
+      expect(getIndexMetadata).toHaveBeenCalledWith(options, User);
+      expect(getId).toHaveBeenCalledWith(options, User, user);
     });
 
     it('handles partial', () => {
       const user: Partial<User> = { name: 'Bob' };
-      const query = getQueryStructure(User, '123', user);
-      expect(query).toEqual({ cls: User, document: user, id: '123', index: 'user', type: 'user' });
+      const query = getQueryStructure(options, User, '123', user);
+      expect(query).toEqual({ cls: User, document: user, id: '123', index: 'a_index', type: 'a_type' });
+      expect(getIndexMetadata).toHaveBeenCalledWith(options, User);
+      expect(getId).not.toHaveBeenCalled();
     });
 
     it('handles only class', () => {
-      const query = getQueryStructure(User);
-      expect(query).toEqual({ cls: User, document: undefined, id: '', index: 'user', type: 'user' });
+      const query = getQueryStructure(options, User);
+      expect(query).toEqual({ cls: User, document: undefined, id: '', index: 'a_index', type: 'a_type' });
+      expect(getIndexMetadata).toHaveBeenCalledWith(options, User);
+      expect(getId).not.toHaveBeenCalled();
     });
 
     it('handles class and id', () => {
-      const query = getQueryStructure(User, '123');
-      expect(query).toEqual({ cls: User, document: undefined, id: '123', index: 'user', type: 'user' });
+      const query = getQueryStructure(options, User, '123');
+      expect(query).toEqual({ cls: User, document: undefined, id: '123', index: 'a_index', type: 'a_type' });
+      expect(getIndexMetadata).toHaveBeenCalledWith(options, User);
+      expect(getId).not.toHaveBeenCalled();
     });
 
     it('handles missing id', () => {
+      (getId as Mock).mockReturnValue('');
       const user: Partial<User> = { name: 'Bob' };
-      const query = getQueryStructure(User, '', user);
-      expect(query).toEqual({ cls: User, document: user, id: '', index: 'user', type: 'user' });
+      const query = getQueryStructure(options, User, '', user);
+      expect(query).toEqual({ cls: User, document: user, id: '', index: 'a_index', type: 'a_type' });
+      expect(getIndexMetadata).toHaveBeenCalledWith(options, User);
+      expect(getId).toHaveBeenCalledWith(options, User, user);
     });
   });
 
   describe('Non primary key based class', () => {
-    @Index()
-    class User {
-      @Field('text') name: string;
-    }
+    beforeEach(() => {
+      options = { indexPrefix: 'es1_' };
+      (getIndexMetadata as Mock).mockReturnValue({ index: 'a_index', type: 'a_type' });
+    });
 
     it('handles instance', () => {
       const user = new User();
-      const query = getQueryStructure(user);
-      expect(query).toEqual({ cls: User, document: user, id: '', index: 'user', type: 'user' });
+      const query = getQueryStructure(options, user);
+      expect(query).toEqual({ cls: User, document: user, id: '', index: 'a_index', type: 'a_type' });
+      expect(getIndexMetadata).toHaveBeenCalledWith(options, User);
+      expect(getId).not.toHaveBeenCalled();
     });
 
     it('handles literal', () => {
       const user: User = { name: 'Bob' };
-      const query = getQueryStructure(User, user);
-      expect(query).toEqual({ cls: User, document: user, id: '', index: 'user', type: 'user' });
+      const query = getQueryStructure(options, User, user);
+      expect(query).toEqual({ cls: User, document: user, id: '', index: 'a_index', type: 'a_type' });
+      expect(getIndexMetadata).toHaveBeenCalledWith(options, User);
+      expect(getId).not.toHaveBeenCalled();
     });
 
     it('handles partial', () => {
       const user: Partial<User> = { name: 'Bob' };
-      const query = getQueryStructure(User, '123', user);
-      expect(query).toEqual({ cls: User, document: user, id: '123', index: 'user', type: 'user' });
+      const query = getQueryStructure(options, User, '123', user);
+      expect(query).toEqual({ cls: User, document: user, id: '123', index: 'a_index', type: 'a_type' });
+      expect(getIndexMetadata).toHaveBeenCalledWith(options, User);
+      expect(getId).not.toHaveBeenCalled();
     });
 
     it('handles only class', () => {
-      const query = getQueryStructure(User);
-      expect(query).toEqual({ cls: User, document: undefined, id: '', index: 'user', type: 'user' });
+      const query = getQueryStructure(options, User);
+      expect(query).toEqual({ cls: User, document: undefined, id: '', index: 'a_index', type: 'a_type' });
+      expect(getIndexMetadata).toHaveBeenCalledWith(options, User);
+      expect(getId).not.toHaveBeenCalled();
     });
 
     it('handles class and id', () => {
-      const query = getQueryStructure(User, '123');
-      expect(query).toEqual({ cls: User, document: undefined, id: '123', index: 'user', type: 'user' });
+      const query = getQueryStructure(options, User, '123');
+      expect(query).toEqual({ cls: User, document: undefined, id: '123', index: 'a_index', type: 'a_type' });
+      expect(getIndexMetadata).toHaveBeenCalledWith(options, User);
+      expect(getId).not.toHaveBeenCalled();
     });
 
     it('handles missing id', () => {
       const user: Partial<User> = { name: 'Bob' };
-      const query = getQueryStructure(User, '', user);
-      expect(query).toEqual({ cls: User, document: user, id: '', index: 'user', type: 'user' });
+      const query = getQueryStructure(options, User, '', user);
+      expect(query).toEqual({ cls: User, document: user, id: '', index: 'a_index', type: 'a_type' });
+      expect(getIndexMetadata).toHaveBeenCalledWith(options, User);
+      expect(getId).not.toHaveBeenCalled();
     });
   });
 });
 
 describe('buildBulkQuery', () => {
+  beforeEach(() => {
+    options = { indexPrefix: 'es1_' };
+    (getId as Mock).mockReturnValue('123');
+  });
+
   describe('Primary key based class', () => {
-    @Index()
-    class User {
-      @Primary()
-      @Field('text')
-      id: string;
-      @Field('text') name: string;
-    }
+    beforeEach(() => {
+      (getIndexMetadata as Mock).mockReturnValue({ index: 'a_index', type: 'a_type', primary: 'id' });
+    });
 
     it('build index query', () => {
-      const query = buildBulkQuery('index', User, [{ id: '123', name: 'Bob' }, { id: '124', name: 'Tom' }]);
+      const query = buildBulkQuery(options, 'index', User, [{ id: '123', name: 'Bob' }, { id: '124', name: 'Tom' }]);
       expect(query).toEqual({
         body: [
-          { index: { _index: 'user', _type: 'user', _id: '123' } },
+          { index: { _index: 'a_index', _type: 'a_type', _id: '123' } },
           { id: '123', name: 'Bob' },
-          { index: { _index: 'user', _type: 'user', _id: '124' } },
+          { index: { _index: 'a_index', _type: 'a_type', _id: '124' } },
           { id: '124', name: 'Tom' },
         ],
       });
@@ -319,15 +352,19 @@ describe('buildBulkQuery', () => {
   });
 
   describe('Non primary key based class', () => {
-    @Index()
-    class User {
-      @Field('text') name: string;
-    }
+    beforeEach(() => {
+      (getIndexMetadata as Mock).mockReturnValue({ index: 'a_index', type: 'a_type' });
+    });
 
     it('build index query', () => {
-      const query = buildBulkQuery('index', User, [{ name: 'Bob' }, { name: 'Tom' }]);
+      const query = buildBulkQuery(options, 'index', User, [{ name: 'Bob' }, { name: 'Tom' }]);
       expect(query).toEqual({
-        body: [{ index: { _index: 'user', _type: 'user' } }, { name: 'Bob' }, { index: { _index: 'user', _type: 'user' } }, { name: 'Tom' }],
+        body: [
+          { index: { _index: 'a_index', _type: 'a_type' } },
+          { name: 'Bob' },
+          { index: { _index: 'a_index', _type: 'a_type' } },
+          { name: 'Tom' },
+        ],
       });
     });
   });

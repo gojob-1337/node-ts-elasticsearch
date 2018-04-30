@@ -1,20 +1,45 @@
 import * as es from 'elasticsearch';
-import { Core } from './core';
+import { Core, ICoreOptions } from './core';
 import { Indices } from './indices';
+
+export interface IConfigOptions extends es.ConfigOptions {
+  indexPrefix?: string;
+  client?: es.Client;
+}
 
 export class Elasticsearch extends Core {
   public indices: Indices;
-  constructor(clientOrParams: es.Client | es.ConfigOptions) {
-    let client: es.Client;
 
-    if (clientOrParams.constructor && clientOrParams instanceof es.Client) {
-      client = clientOrParams as es.Client;
+  /**
+   * Split IConfigOptions into ConfigOptions and ICoreOptions
+   * @param options
+   */
+  private static splitOptions(options: IConfigOptions): { clientOptions: es.ConfigOptions; coreOptions: ICoreOptions } {
+    const coreOptions: ICoreOptions = {};
+    const clientOptions = { ...options };
+
+    delete clientOptions.indexPrefix;
+    delete clientOptions.client;
+
+    coreOptions.indexPrefix = options.indexPrefix;
+
+    return { clientOptions, coreOptions };
+  }
+
+  constructor(clientOrOptions: es.Client | IConfigOptions) {
+    let client: es.Client;
+    let coreOptions: ICoreOptions = {};
+    let clientOptions: es.ConfigOptions = {};
+
+    if (clientOrOptions.constructor && clientOrOptions instanceof es.Client) {
+      client = clientOrOptions as es.Client;
     } else {
-      client = new es.Client(clientOrParams as es.ConfigOptions);
+      const options: IConfigOptions = clientOrOptions as IConfigOptions;
+      ({ coreOptions, clientOptions } = Elasticsearch.splitOptions(options));
+      client = options.client || new es.Client(clientOptions);
     }
 
-    super(client);
-
-    this.indices = new Indices(client);
+    super(client, coreOptions);
+    this.indices = new Indices(client, coreOptions);
   }
 }
