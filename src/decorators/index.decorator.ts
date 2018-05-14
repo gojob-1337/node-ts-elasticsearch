@@ -1,4 +1,6 @@
 import { DECORATORS } from '../constants';
+import { IndexStore } from '../lib/index-store';
+import { AnyClass } from '../types';
 
 export interface IIndexOptions {
   index?: string;
@@ -9,14 +11,14 @@ export interface IIndexOptions {
 /**
  * Index decorator factory
  */
-export function Index(pathOrOptions?: IIndexOptions): any;
-export function Index(pathOrOptions: string, indexOptions?: IIndexOptions): any;
-export function Index(pathOrOptions?: string | IIndexOptions, indexOptions?: IIndexOptions): any {
+export function Index(pathOrOptions?: IIndexOptions): <T extends AnyClass>(target: T) => T;
+export function Index(pathOrOptions: string, indexOptions?: IIndexOptions): <T extends AnyClass>(target: T) => T;
+export function Index(pathOrOptions?: string | IIndexOptions, indexOptions?: IIndexOptions): <T extends AnyClass>(target: T) => T {
   /**
    * Index decorator
    * Store class description into class metadata using DECORATORS.INDEX key
    */
-  return <T extends new (...args: any[]) => any>(target: T): T => {
+  return <T extends AnyClass>(target: T): T => {
     const options: IIndexOptions = (pathOrOptions && typeof pathOrOptions === 'object' ? pathOrOptions : indexOptions) || {};
     const name: string = (typeof pathOrOptions === 'string' ? pathOrOptions : options.index) || target.name;
     const parts = name.split('/');
@@ -27,6 +29,7 @@ export function Index(pathOrOptions?: string | IIndexOptions, indexOptions?: IIn
       throw new Error('Index undefined');
     }
     Reflect.defineMetadata(DECORATORS.INDEX, { ...meta, index: index.toLowerCase(), type: type.toLowerCase(), settings: options.settings }, target);
+    IndexStore.add(target);
     return target;
   };
 }

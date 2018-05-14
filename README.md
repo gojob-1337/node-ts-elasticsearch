@@ -182,7 +182,7 @@ Extended options provided by IConfigOptions:
 |     Name    |                                                    Type                                                   | Optional | Description                     |
 |:-----------:|:---------------------------------------------------------------------------------------------------------:|:--------:|---------------------------------|
 | client      | [elasticsearch.Client](https://github.com/elastic/elasticsearch-js/blob/14.x/docs/configuration.asciidoc) |     X    | Official client instance to use |
-| indexPrefix |                                                   string                                                  |     X    | Prefix to set to all indexes    |
+| indexPrefix |                                                   string                                                  |     X    | Prefix to set to all indices    |
 
 #### Core functions
 
@@ -193,6 +193,7 @@ The main class provides the main part of the [document API](https://www.elastic.
 - create: Add a new document to the index [create api](https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/api-reference.html#api-create))
 - delete: Delete a document from the index [delete api](https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/api-reference.html#api-delete))
 - get: Retrieve a document by its id [get api](https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/api-reference.html#api-get))
+- getIndices: Return all Indexed classes
 - index: Add or update a document in the index [index api](https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/api-reference.html#api-index))
 - search: Search documents in the index [search api](https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/api-reference.html#api-search))
 - update: Update a document [update api](https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/api-reference.html#api-update))

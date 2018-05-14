@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Added index stored + getIndices to retrieve all indexed classes
 
 ## [1.1.0] 2018-04-30
 

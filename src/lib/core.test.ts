@@ -4,6 +4,7 @@ import Mock = jest.Mock;
 
 import { Field, Index, Primary } from '../';
 import { BULK_ITEMS_COUNT_MAX, Core, ICoreOptions } from './core';
+import { IndexStore } from './index-store';
 import { deepFreeze } from './testing-tools.test';
 
 import * as tools from './tools';
@@ -297,6 +298,19 @@ describe('get', () => {
     await core.get(User, { id: '456', ignore: 404 });
     expect(client.get).toHaveBeenCalledTimes(1);
     expect(client.get).toHaveBeenCalledWith({ index: 'es1_user', type: 'user', id: '456', ignore: 404 });
+  });
+});
+
+describe('getIndices', () => {
+  it('return stored indices', () => {
+    const indices: any = [{}, {}];
+    const spy = jest.spyOn(IndexStore, 'getAll');
+    spy.mockReturnValue(indices);
+
+    expect(core.getIndices()).toBe(indices);
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    spy.mockRestore();
   });
 });
 

@@ -1,4 +1,5 @@
 import { DECORATORS } from '../constants';
+import { IndexStore } from '../lib/index-store';
 import { Index } from './index.decorator';
 
 describe('pathOrOptions as string', () => {
@@ -101,11 +102,28 @@ describe('only options object', () => {
   });
 });
 
-describe('requires index', () => {
+describe('@index', () => {
   it('throw if index is missing', () => {
     expect(() => {
       @Index('/type')
       class Tweet {}
     }).toThrow('Index undefined');
+  });
+
+  it('store the class in the IndexStore', () => {
+    const spy = jest.spyOn(IndexStore, 'add');
+
+    const define = () => {
+      @Index()
+      class Tweet {}
+      return Tweet;
+    };
+
+    const cls = define();
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(cls);
+
+    spy.mockRestore();
   });
 });

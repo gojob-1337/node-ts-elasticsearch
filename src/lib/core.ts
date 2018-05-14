@@ -1,7 +1,9 @@
 import { Client, CountParams, CountResponse, GetParams, GetResponse, ScrollParams, SearchParams, SearchResponse } from 'elasticsearch';
 import { Readable } from 'stream';
-import { Indexed, IndexedClass } from '../types';
+
+import { AnyClass, Indexed, IndexedClass } from '../types';
 import { ArrayStream } from './array-stream';
+import { IndexStore } from './index-store';
 import { getIndexMetadata } from './metadata-handler';
 import { buildBulkQuery, getQueryStructure, instantiateResult } from './tools';
 
@@ -154,6 +156,13 @@ export class Core {
     const response = await this.client.get<T>(params);
     const document = instantiateResult(cls, response._source);
     return { response, document };
+  }
+
+  /**
+   * Return all Indexed classes
+   */
+  getIndices(): AnyClass[] {
+    return IndexStore.getAll();
   }
 
   /**
