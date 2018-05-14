@@ -1,4 +1,5 @@
 import * as es from 'elasticsearch';
+
 import { Core, ICoreOptions } from './core';
 import { Indices } from './indices';
 

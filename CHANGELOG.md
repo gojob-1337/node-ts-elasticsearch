@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Expose Client into core
+
 ## [1.2.1] 2018-05-14
 
 - Fix missing `static` on Core.getIndices
