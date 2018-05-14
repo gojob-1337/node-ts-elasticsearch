@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.3.0] 2018-05-14
+
 - Expose Client into core
 
 ## [1.2.1] 2018-05-14
