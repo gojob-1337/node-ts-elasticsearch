@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.2.1] 2018-05-14
+
+- Fix missing `static` on Core.getIndices
+
 ## [1.2.0] 2018-05-14
 
 - Added index stored + getIndices to retrieve all indexed classes

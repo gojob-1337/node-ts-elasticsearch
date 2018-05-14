@@ -161,7 +161,7 @@ export class Core {
   /**
    * Return all Indexed classes
    */
-  getIndices(): AnyClass[] {
+  static getIndices(): AnyClass[] {
     return IndexStore.getAll();
   }
 

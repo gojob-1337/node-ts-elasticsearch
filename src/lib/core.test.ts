@@ -307,7 +307,7 @@ describe('getIndices', () => {
     const spy = jest.spyOn(IndexStore, 'getAll');
     spy.mockReturnValue(indices);
 
-    expect(core.getIndices()).toBe(indices);
+    expect(Core.getIndices()).toBe(indices);
     expect(spy).toHaveBeenCalledTimes(1);
 
     spy.mockRestore();
