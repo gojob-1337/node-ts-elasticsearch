@@ -2,9 +2,10 @@
 
 ## [Unreleased]
 
-## [1.3.1] 2019-01-30
+## [1.3.2] 2019-01-30
 
 - Move `@types/elasticsearch` from `devDependencies` to `dependencies`
+- Update `README.md` file to add documentation for npm publish process
 
 ## [1.3.0] 2018-05-14
 

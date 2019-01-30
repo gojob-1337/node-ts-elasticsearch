@@ -3,6 +3,10 @@
 [![travis build](https://img.shields.io/travis/gojob-1337/node-ts-elasticsearch.svg)](https://travis-ci.org/gojob-1337/node-ts-elasticsearch)
 [![Coverage Status](https://coveralls.io/repos/github/gojob-1337/node-ts-elasticsearch/badge.svg?branch=master)](https://coveralls.io/github/gojob-1337/node-ts-elasticsearch?branch=master)
 
+## NPM publish
+
+**To publish a new version of this package, you have to build the project before run `npm publish`.**
+
 ## Description
 
 The purpose of this library is to provide a decorated class approch to use the [elasticsearch](https://www.npmjs.com/package/elasticsearch) module.
