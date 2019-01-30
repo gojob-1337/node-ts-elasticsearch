@@ -1,6 +1,6 @@
 {
     "name": "@gojob/ts-elasticsearch",
-    "version": "1.3.0",
+    "version": "1.3.1",
     "license": "MIT",
     "description": "Elasticsearch decorated by TypeScript",
     "main": "./dist/index.js",
@@ -26,7 +26,6 @@
     },
     "devDependencies": {
         "@gojob/tslint-config": "^0.0.3",
-        "@types/elasticsearch": "^5.0.22",
         "@types/jest": "^22.2.2",
         "@types/node": "^7.0.60",
         "coveralls": "^3.0.0",
@@ -40,6 +39,7 @@
         "typescript": "^2.8.1"
     },
     "dependencies": {
+        "@types/elasticsearch": "^5.0.22",
         "elasticsearch": "^14.2.2",
         "reflect-metadata": "^0.1.12"
     }

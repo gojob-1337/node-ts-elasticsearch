@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.3.1] 2019-01-30
+
+- Move `@types/elasticsearch` from `devDependencies` to `dependencies`
+
 ## [1.3.0] 2018-05-14
 
 - Expose Client into core
