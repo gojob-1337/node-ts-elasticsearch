@@ -1,6 +1,6 @@
 {
     "name": "@gojob/ts-elasticsearch",
-    "version": "1.3.2",
+    "version": "1.3.3",
     "license": "MIT",
     "description": "Elasticsearch decorated by TypeScript",
     "main": "./dist/index.js",
