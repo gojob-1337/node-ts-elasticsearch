@@ -29,21 +29,19 @@ class City {
 describe('getPureMapping', () => {
   it('remove class from mapping', () => {
     class Message {}
-    class User {}
-    class City {}
 
     const structure: IPropertiesMetadata = {
       msg: { type: 'text', _cls: Message },
       like: { type: 'double' },
       author: {
         type: 'object',
-        _cls: User,
+        _cls: class {},
         properties: {
           id: { type: 'text' },
           name: { type: 'text' },
           city: {
             type: 'object',
-            _cls: City,
+            _cls: class {},
             properties: {
               name: { type: 'text' },
             },

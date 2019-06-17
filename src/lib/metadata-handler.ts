@@ -43,7 +43,7 @@ export function getPropertiesMetadata<T>(cls: IndexedClass<T>): IPropertiesMetad
  */
 export function getId<T>(coreOptions: ICoreOptions, docOrClass: T | IndexedClass<T>, doc?: Partial<T>): string | undefined {
   const document: any = doc || docOrClass;
-  const cls: IndexedClass<T> = doc ? (docOrClass as IndexedClass<T>) : (docOrClass.constructor as IndexedClass<T>);
+  const cls: IndexedClass<T> = doc ? (docOrClass as IndexedClass<T>) : ((docOrClass as IndexedClass<T>).constructor as IndexedClass<T>);
   const meta = getIndexMetadata(coreOptions, cls);
   if (!meta.primary) {
     throw new Error(`Primary not defined for class ${cls.name}`);

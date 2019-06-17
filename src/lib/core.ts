@@ -11,13 +11,19 @@ export type IndexedGetParams = Indexed<GetParams>;
 export type IndexedSearchParams = Indexed<SearchParams>;
 export type IndexedCountParams = Indexed<CountParams>;
 
-export const BULK_ITEMS_COUNT_MAX = 1000;
+export const DEFAULT_BULK_SIZE = 100;
 
 export interface ICoreOptions {
   indexPrefix?: string;
 }
 
 export class Core {
+  /**
+   * Return all Indexed classes
+   */
+  static getIndices(): AnyClass[] {
+    return IndexStore.getAll();
+  }
   constructor(private readonly client: Client, private readonly options: ICoreOptions) {}
 
   /**
@@ -32,7 +38,7 @@ export class Core {
    * @param cls
    * @param documentsOrStream
    */
-  bulkIndex<T>(cls: IndexedClass<T>, documentsOrStream: Array<Partial<T>> | Readable): Promise<void> {
+  bulkIndex<T>(cls: IndexedClass<T>, documentsOrStream: Array<Partial<T>> | Readable, bulkSize: number = DEFAULT_BULK_SIZE): Promise<void> {
     return new Promise((resolve, reject) => {
       const items: Array<Partial<T>> = [];
       const stream: Readable = Array.isArray(documentsOrStream) ? new ArrayStream(documentsOrStream) : documentsOrStream;
@@ -52,7 +58,7 @@ export class Core {
 
       const onData = async (item: Partial<T>) => {
         items.push(item);
-        if (items.length >= BULK_ITEMS_COUNT_MAX) {
+        if (items.length >= bulkSize) {
           stream.pause();
           await send();
           stream.resume();
@@ -156,13 +162,6 @@ export class Core {
     const response = await this.client.get<T>(params);
     const document = instantiateResult(cls, response._source);
     return { response, document };
-  }
-
-  /**
-   * Return all Indexed classes
-   */
-  static getIndices(): AnyClass[] {
-    return IndexStore.getAll();
   }
 
   /**

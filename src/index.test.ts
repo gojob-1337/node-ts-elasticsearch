@@ -2,6 +2,7 @@ import * as es from 'elasticsearch';
 
 import { Index } from './decorators/index.decorator';
 import { Field, Primary } from './index';
+// tslint:disable-next-line:no-duplicate-imports
 import * as library from './index';
 import { Elasticsearch } from './lib/elasticsearch';
 

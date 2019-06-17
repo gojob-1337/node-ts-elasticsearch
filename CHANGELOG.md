@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.3.3] 2019-06-17
+
+- chore(packages): Update packages and fix breaking changes
+- refactor(core): Add `bulkSize` option to `bulkIndex` method
+
 ## [1.3.2] 2019-01-30
 
 - Move `@types/elasticsearch` from `devDependencies` to `dependencies`
