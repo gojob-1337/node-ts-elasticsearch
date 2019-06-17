@@ -3,7 +3,7 @@ import { Readable } from 'stream';
 import Mock = jest.Mock;
 
 import { Field, Index, Primary } from '../';
-import { BULK_ITEMS_COUNT_MAX, Core, ICoreOptions } from './core';
+import { Core, DEFAULT_BULK_SIZE, ICoreOptions } from './core';
 import { IndexStore } from './index-store';
 import { deepFreeze } from './testing-tools.test';
 
@@ -76,9 +76,12 @@ describe('bulkIndex', () => {
     expect(client.bulk).toHaveBeenCalledWith(query);
   });
 
-  it('paginate bulks', async () => {
+  it('paginate with 3 bulks of users', async () => {
     const source: Array<Partial<User>> = [];
-    for (let i = 0; i < 1 + 2 * BULK_ITEMS_COUNT_MAX; i++) {
+    const bulkSize = 50;
+    const nbUsers = 3 * bulkSize;
+
+    for (let i = 0; i < nbUsers; i++) {
       source.push({ age: i });
     }
 
@@ -86,17 +89,12 @@ describe('bulkIndex', () => {
     client.bulk = jest.fn();
     (tools.buildBulkQuery as Mock).mockReturnValue(query);
 
-    await core.bulkIndex(User, source);
+    await core.bulkIndex(User, source, bulkSize);
 
     expect(tools.buildBulkQuery).toHaveBeenCalledTimes(3);
-    expect(tools.buildBulkQuery).toHaveBeenCalledWith(coreOptions, 'index', User, source.slice(0, BULK_ITEMS_COUNT_MAX));
-    expect(tools.buildBulkQuery).toHaveBeenCalledWith(coreOptions, 'index', User, source.slice(BULK_ITEMS_COUNT_MAX, 2 * BULK_ITEMS_COUNT_MAX));
-    expect(tools.buildBulkQuery).toHaveBeenCalledWith(
-      coreOptions,
-      'index',
-      User,
-      source.slice(2 * BULK_ITEMS_COUNT_MAX, 2 * BULK_ITEMS_COUNT_MAX + 1),
-    );
+    expect(tools.buildBulkQuery).toHaveBeenNthCalledWith(1, coreOptions, 'index', User, source.slice(0, bulkSize));
+    expect(tools.buildBulkQuery).toHaveBeenNthCalledWith(2, coreOptions, 'index', User, source.slice(bulkSize, 2 * bulkSize));
+    expect(tools.buildBulkQuery).toHaveBeenNthCalledWith(3, coreOptions, 'index', User, source.slice(2 * bulkSize));
 
     expect(client.bulk).toHaveBeenCalledTimes(3);
     expect(client.bulk).toHaveBeenCalledWith(query);
@@ -104,7 +102,28 @@ describe('bulkIndex', () => {
 
   it('handle the special case of ending on a single paginated bulk', async () => {
     const source: Array<Partial<User>> = [];
-    for (let i = 0; i < BULK_ITEMS_COUNT_MAX; i++) {
+    const bulkSize = 50;
+
+    for (let i = 0; i < bulkSize; i++) {
+      source.push({ age: i });
+    }
+
+    const query = { body: {} };
+    client.bulk = jest.fn();
+    (tools.buildBulkQuery as Mock).mockReturnValue(query);
+
+    await core.bulkIndex(User, source, bulkSize);
+
+    expect(tools.buildBulkQuery).toHaveBeenCalledTimes(1);
+    expect(tools.buildBulkQuery).toHaveBeenCalledWith(coreOptions, 'index', User, source);
+
+    expect(client.bulk).toHaveBeenCalledTimes(1);
+    expect(client.bulk).toHaveBeenCalledWith(query);
+  });
+
+  it('use default bulk size when no bulk size is passed in params', async () => {
+    const source: Array<Partial<User>> = [];
+    for (let i = 0; i < DEFAULT_BULK_SIZE; i++) {
       source.push({ age: i });
     }
 
@@ -122,10 +141,7 @@ describe('bulkIndex', () => {
   });
 
   it('ends on first error', async () => {
-    const source: Array<Partial<User>> = [];
-    for (let i = 0; i < 1 + 2 * BULK_ITEMS_COUNT_MAX; i++) {
-      source.push({ age: i });
-    }
+    const source: Array<Partial<User>> = [{ age: 42 }];
 
     client.bulk = jest.fn();
     (tools.buildBulkQuery as Mock).mockImplementation(() => {
