@@ -6,7 +6,7 @@
     "strictPropertyInitialization": false,
     "noImplicitAny": true,
     "noImplicitThis": true,
-    "skipLibCheck": false,
+    "skipLibCheck": true,
     "removeComments": true,
     "noLib": false,
     "emitDecoratorMetadata": true,
@@ -20,7 +20,6 @@
     "src/**/*"
   ],
   "exclude": [
-    "node_modules",
-    "**/*.test.ts"
+    "node_modules"
   ]
 }

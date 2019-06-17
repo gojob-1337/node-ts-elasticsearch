@@ -9,8 +9,6 @@ export interface IConfigOptions extends es.ConfigOptions {
 }
 
 export class Elasticsearch extends Core {
-  public indices: Indices;
-
   /**
    * Split IConfigOptions into ConfigOptions and ICoreOptions
    * @param options
@@ -26,6 +24,7 @@ export class Elasticsearch extends Core {
 
     return { clientOptions, coreOptions };
   }
+  public indices: Indices;
 
   constructor(clientOrOptions: es.Client | IConfigOptions) {
     let client: es.Client;

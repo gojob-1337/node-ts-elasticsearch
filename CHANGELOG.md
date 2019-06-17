@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- chore(packages): Update packages and fix breaking changes
 
 ## [1.3.2] 2019-01-30
 

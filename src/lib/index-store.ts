@@ -1,8 +1,6 @@
 import { AnyClass, IndexedClass } from '../types';
 
 export class IndexStore {
-  private static store: AnyClass[] = [];
-
   public static add<T>(cls: IndexedClass<T>) {
     if (typeof cls !== 'function') {
       throw new Error('Function expected');
@@ -17,4 +15,5 @@ export class IndexStore {
   public static getAll(): AnyClass[] {
     return IndexStore.store.slice();
   }
+  private static store: AnyClass[] = [];
 }

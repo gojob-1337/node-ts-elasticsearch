@@ -18,6 +18,12 @@ export interface ICoreOptions {
 }
 
 export class Core {
+  /**
+   * Return all Indexed classes
+   */
+  static getIndices(): AnyClass[] {
+    return IndexStore.getAll();
+  }
   constructor(private readonly client: Client, private readonly options: ICoreOptions) {}
 
   /**
@@ -156,13 +162,6 @@ export class Core {
     const response = await this.client.get<T>(params);
     const document = instantiateResult(cls, response._source);
     return { response, document };
-  }
-
-  /**
-   * Return all Indexed classes
-   */
-  static getIndices(): AnyClass[] {
-    return IndexStore.getAll();
   }
 
   /**
