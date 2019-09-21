@@ -120,6 +120,9 @@ export function buildBulkQuery<T>(coreOptions: ICoreOptions, action: 'index', cl
     const description: any = { _index: metadata.index, _type: metadata.type };
     if (metadata.primary && (document as any)[metadata.primary]) {
       description._id = (document as any)[metadata.primary];
+      if (metadata.primary === '_id') {
+        delete (document as any)[metadata.primary];
+      }
     }
     body.push({ [action]: description }, document);
   });

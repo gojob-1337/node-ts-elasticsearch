@@ -3,6 +3,7 @@ import { ICoreOptions } from './core';
 import { getId, getIndexMetadata, getPropertiesMetadata } from './metadata-handler';
 import { deepFreeze } from './testing-tools.test';
 import { buildBulkQuery, getPureMapping, getQueryStructure, instantiateResult } from './tools';
+
 import Mock = jest.Mock;
 
 jest.mock('./metadata-handler');
@@ -17,6 +18,7 @@ class User {
   city?: City;
   cities?: City[];
 }
+
 class Country {
   name: string;
 }
@@ -362,6 +364,28 @@ describe('buildBulkQuery', () => {
           { name: 'Bob' },
           { index: { _index: 'a_index', _type: 'a_type' } },
           { name: 'Tom' },
+        ],
+      });
+    });
+  });
+
+  describe('Primary key is _id', () => {
+    beforeEach(() => {
+      (getIndexMetadata as Mock).mockReturnValue({ index: 'a_index', type: 'a_type', primary: '_id' });
+    });
+
+    it('build index query', () => {
+      class Doc {
+        _id?: string;
+        title: string;
+      }
+      const query = buildBulkQuery(options, 'index', Doc, [{ _id: '123', title: 'Test' }, { _id: '124', title: 'Test 2' }]);
+      expect(query).toEqual({
+        body: [
+          { index: { _index: 'a_index', _type: 'a_type', _id: '123' } },
+          { title: 'Test' },
+          { index: { _index: 'a_index', _type: 'a_type', _id: '124' } },
+          { title: 'Test 2' },
         ],
       });
     });
